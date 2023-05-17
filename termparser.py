@@ -8,8 +8,10 @@ import collections
 
 """
 This is a script that contains a function to create, 
-from these downloaded files, a single json file which contains
-a non-redundant set of pubmed records from all these files.
+from these downloaded files, ajson file which contains
+a non-redundant set of pubmed records.
+It also creates a json file containing the MESH terms-and the PMIDs that each term appears in.
+
 
 """
 """""
@@ -71,7 +73,7 @@ def parserPubmed(folder_name, source):
     #create a name for the json file, for now
     #output_path = folder_name + folder + ".json"
     #output_path = folder_name +"\\" + folder +"_pubmed_abstract_bu" ".json"
-    output_path =  folder +"_pubmed_abstract_bu" +".json"
+
     #pmidListdoc =  folder + "testList"+ ".txt"
     PMID = ""
     docID = 0
@@ -82,11 +84,15 @@ def parserPubmed(folder_name, source):
     docIDcount = 0
     repeatCount = 0
     pmidList = [int]
+
+    #
     terms = collections.defaultdict(list)
     publicationPlaces=collections.defaultdict(list)
+    journals= collections.defaultdict(list)
     #for now, I'm just nesting two dictionaries together.
     for filename in os.listdir(folder_name):
         if filename.endswith(".txt"):
+            filelabel = filename.split(".")[0]
             try:
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
                     file_content = f.read()
@@ -117,8 +123,9 @@ def parserPubmed(folder_name, source):
                         #elif line starts with the PubMed element key, then run getElement on the line
                         elif line.startswith("JT"):
                             JT =getElement("JT", line, subdata, "journal")
+                            JT2= getElementAppearances("JT", line, subdata, docID)
                         elif line.startswith("TI"):
-                            JT =getElement("TI", line, subdata, "title")
+                            TI =getElement("TI", line, journals, "title")
                         elif line.startswith("AB  -"):
                             AB = getElement("AB", line, subdata, "abstract")
                         elif line.startswith("PL  -"):
@@ -143,32 +150,37 @@ def parserPubmed(folder_name, source):
             except OSError as e:
                 print("Error opening file:", e)
                 sys.exit()
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        with open(output_path, "w", encoding ="utf8") as f:
-            for docID in data:
-                 docIDcount+=1
-                 json.dump(data[docID], f)
-            #^this for loop is to make sure the output is formatted correctly. 
-            print("Output file saved as", output_path)
-            print("Number of PMIDs found:", PMIDcount)
-            print("Number of docIDs added to json", docIDcount)
-            print("Number of repeat docIDs, found:", repeatCount)
-        f.close()
-        with open ("terms.json", "w", encoding="utf8") as file2:
-            for term in terms:
-                teststring= (f"{term, terms[term]} total:{len(terms[term])}")
-                json.dump([teststring], file2)
-        file2.close()
-        with open ("countries.json", "w", encoding="utf8") as file3:
-            for place in publicationPlaces:
-                teststring= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
-                json.dump([teststring], file3)
-        file3.close()
-    except OSError as e:
-        print("Error writing to file:", e)
-        sys.exit()
-    t1 = time.clock()
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+                with open(filelabel+".json", "w", encoding ="utf8") as f:
+                    for docID in data:
+                            docIDcount+=1
+                            json.dump(data[docID], f)
+                    #^this for loop is to make sure the output is formatted correctly. 
+                    print("Number of PMIDs found:", PMIDcount)
+                    print("Number of docIDs added to json", docIDcount)
+                    print("Number of repeat docIDs, found:", repeatCount)
+                f.close()
+
+                with open (filelabel+"_terms.json", "w", encoding="utf8") as file2:
+                    for term in terms:
+                        teststring= (f"{term, terms[term]} total:{len(terms[term])}")
+                        json.dump([teststring], file2)
+                file2.close()
+                with open (filelabel+"_countries.json", "w", encoding="utf8") as file3:
+                    for place in publicationPlaces:
+                        teststring= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
+                        json.dump(teststring, file3)
+                file3.close()
+                with open (filelabel+"_journals.json", "w", encoding="utf8") as file4:
+                    for journal in journals:
+                        teststring= (f"{journal, journals[journal]} total:{len(journals[journal])}")
+                        json.dump([teststring], file4)
+                file4.close()
+            except OSError as e:
+                print("Error writing to file:", e)
+                sys.exit()
+            t1 = time.clock()
     print("Time elapsed: ", t1 - t0)
     # with open (pmidListdoc, "w", encoding ="utf8") as fp:
     #     for item in pmidList:
