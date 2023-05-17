@@ -123,9 +123,9 @@ def parserPubmed(folder_name, source):
                         #elif line starts with the PubMed element key, then run getElement on the line
                         elif line.startswith("JT"):
                             JT =getElement("JT", line, subdata, "journal")
-                            JT2= getElementAppearances("JT", line, subdata, docID)
-                        elif line.startswith("TI"):
-                            TI =getElement("TI", line, journals, "title")
+                            JT2= getElementAppearances("JT", line, journals, docID)
+                        elif line.startswith("TI  -"):
+                            TI =getElement("TI", line, subdata, "title")
                         elif line.startswith("AB  -"):
                             AB = getElement("AB", line, subdata, "abstract")
                         elif line.startswith("PL  -"):
