@@ -5,13 +5,15 @@ import re
 from datetime import datetime
 import time
 import collections
+from tqdm import tqdm
 
 """
 This is a script that contains a function to create, 
 from these downloaded files, ajson file which contains
 a non-redundant set of pubmed records.
 It also creates a json file containing the MESH terms-and the PMIDs that each term appears in.
-
+This code is duplicated so it creates files with MESH symbol value-pmids pairs. (ex: journals-pmids,
+publication country-pmids, & journal-pmids )
 
 """
 """""
@@ -75,28 +77,31 @@ def parserPubmed(folder_name, source):
     #output_path = folder_name +"\\" + folder +"_pubmed_abstract_bu" ".json"
 
     #pmidListdoc =  folder + "testList"+ ".txt"
-    PMID = ""
-    docID = 0
-    data = {} #{docID :{},} #defining data here means the first key value pair is 0:{}.
+ #{docID :{},} #defining data here means the first key value pair is 0:{}.
     
     #lines 71-74 is to make sure there are no missing pmids
-    PMIDcount = 0 
-    docIDcount = 0
-    repeatCount = 0
-    pmidList = [int]
-
-    #
-    terms = collections.defaultdict(list)
-    publicationPlaces=collections.defaultdict(list)
-    journals= collections.defaultdict(list)
-    abstracts = collections.defaultdict(list)
-    titles = collections.defaultdict(list)
+    
     #for now, I'm just nesting two dictionaries together.
     for filename in os.listdir(folder_name):
         if filename.endswith(".txt"):
             filelabel = filename.split(".")[0]
+            PMIDcount = 0 
+            docIDcount = 0
+            repeatCount = 0
+            pmidList = [int]
+            PMID = ""
+            docID = 0
+            data = {}
+            #
+            terms = collections.defaultdict(list)
+            publicationPlaces=collections.defaultdict(list)
+            journals= collections.defaultdict(list)
+            abstracts = collections.defaultdict(list)
+            titles = collections.defaultdict(list)
             try:
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
+                    print (folder)
+                    print(filename)
                     file_content = f.read()
                     file_content = file_content.replace("\n      ", "")
                     #After the first line, each line in the abstract starts with extra spaces.
@@ -164,28 +169,31 @@ def parserPubmed(folder_name, source):
                     print("Number of docIDs added to json", docIDcount)
                     print("Number of repeat docIDs, found:", repeatCount)
                 f.close()
-
-                with open (filelabel+"_terms.json", "w", encoding="utf8") as file2:
+                with open (os.path.join(folder_name, filelabel+"_terms.json"), "w", encoding="utf8") as file2:
                     for term in terms:
                         termstring= (f"{term, terms[term]} total:{len(terms[term])}")
                         json.dump([termstring], file2)
                 file2.close()
-                with open (filelabel+"_countries.json", "w", encoding="utf8") as file3:
+                with open (os.path.join(folder_name, filelabel+"_countries.json"), "w", encoding="utf8") as file3:
                     for place in publicationPlaces:
                         c_string= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
                         json.dump(c_string, file3)
                 file3.close()
-                with open (filelabel+"_journals.json", "w", encoding="utf8") as file4:
+                with open (os.path.join(folder_name, filelabel+"_journals.json"), "w", encoding="utf8") as file4:
                     for journal in journals:
                         j_string= (f"{journal, journals[journal]} total:{len(journals[journal])}")
                         json.dump([j_string], file4)
                 file4.close()
-                with open (filelabel+"_titles.json", "w", encoding="utf8") as file5:
+                with open (os.path.join(folder_name, filelabel+"_titles.json"), "w", encoding="utf8") as file5:
                     for title in titles:
                         t_string= (f"{title, titles[title]} total:{len(titles[title])}")
-                        json.dump([t_string], file4)
+                        json.dump([t_string], file5)
                 file5.close()
-                
+                with open (os.path.join(folder_name, filelabel+"_abstracts.json"), "w", encoding="utf8") as file6:
+                    for abstract in abstracts:
+                        ab_string= (f"{abstract, abstracts[abstract]} total:{len(abstracts[abstract])}")
+                        json.dump([ab_string], file6)
+                file6.close()
             except OSError as e:
                 print("Error writing to file:", e)
                 sys.exit()
