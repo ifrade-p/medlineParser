@@ -89,6 +89,8 @@ def parserPubmed(folder_name, source):
     terms = collections.defaultdict(list)
     publicationPlaces=collections.defaultdict(list)
     journals= collections.defaultdict(list)
+    abstracts = collections.defaultdict(list)
+    titles = collections.defaultdict(list)
     #for now, I'm just nesting two dictionaries together.
     for filename in os.listdir(folder_name):
         if filename.endswith(".txt"):
@@ -119,15 +121,16 @@ def parserPubmed(folder_name, source):
                                 DP = line.split("DP  - ")[-1]
                                 year1 = int(DP[:4])
                                 subdata["year"] = year1
-
                         #elif line starts with the PubMed element key, then run getElement on the line
                         elif line.startswith("JT"):
                             JT =getElement("JT", line, subdata, "journal")
                             JT2= getElementAppearances("JT", line, journals, docID)
                         elif line.startswith("TI  -"):
                             TI =getElement("TI", line, subdata, "title")
+                            TI = getElementAppearances("TI", line, titles, docID)
                         elif line.startswith("AB  -"):
                             AB = getElement("AB", line, subdata, "abstract")
+                            AB2 = getElementAppearances("AB", line, abstracts, docID)
                         elif line.startswith("PL  -"):
                             PL = getElement("PL", line, subdata, "Place of Publication")
                             PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
@@ -164,19 +167,25 @@ def parserPubmed(folder_name, source):
 
                 with open (filelabel+"_terms.json", "w", encoding="utf8") as file2:
                     for term in terms:
-                        teststring= (f"{term, terms[term]} total:{len(terms[term])}")
-                        json.dump([teststring], file2)
+                        termstring= (f"{term, terms[term]} total:{len(terms[term])}")
+                        json.dump([termstring], file2)
                 file2.close()
                 with open (filelabel+"_countries.json", "w", encoding="utf8") as file3:
                     for place in publicationPlaces:
-                        teststring= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
-                        json.dump(teststring, file3)
+                        c_string= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
+                        json.dump(c_string, file3)
                 file3.close()
                 with open (filelabel+"_journals.json", "w", encoding="utf8") as file4:
                     for journal in journals:
-                        teststring= (f"{journal, journals[journal]} total:{len(journals[journal])}")
-                        json.dump([teststring], file4)
+                        j_string= (f"{journal, journals[journal]} total:{len(journals[journal])}")
+                        json.dump([j_string], file4)
                 file4.close()
+                with open (filelabel+"_titles.json", "w", encoding="utf8") as file5:
+                    for title in titles:
+                        t_string= (f"{title, titles[title]} total:{len(titles[title])}")
+                        json.dump([t_string], file4)
+                file5.close()
+                
             except OSError as e:
                 print("Error writing to file:", e)
                 sys.exit()
