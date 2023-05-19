@@ -1,3 +1,4 @@
+from pickle import FALSE
 import sys
 import os
 import json
@@ -67,19 +68,7 @@ def parserPubmed(folder_name, source):
     #There's an issue with json where you annoyingly need the abspath to write a json file
     output_dir = os.path.abspath(folder_name)
 
-    #folder = os.path.dirname(folder_name)
     folder =os.path.basename(folder_name)
-    #print(folder)
-    #create a name for the json file, for now
-    #output_path = folder_name + folder + ".json"
-    #output_path = folder_name +"\\" + folder +"_pubmed_abstract_bu" ".json"
-
-    #pmidListdoc =  folder + "testList"+ ".txt"
- #{docID :{},} #defining data here means the first key value pair is 0:{}.
-    
-    #lines 71-74 is to make sure there are no missing pmids
-    
-    #for now, I'm just nesting two dictionaries together.
     for filename in os.listdir(folder_name):
         if filename.endswith(".txt"):
             filelabel = filename.split(".")[0]
@@ -98,13 +87,19 @@ def parserPubmed(folder_name, source):
                     terms = collections.defaultdict(list)
                     publicationPlaces=collections.defaultdict(list)
                     journals= collections.defaultdict(list)
-                    abstracts = collections.defaultdict(list)
-                    titles = collections.defaultdict(list)
+                    abstracts = collections.defaultdict(str)
+                    titles = collections.defaultdict(str)
                     years = collections.defaultdict(list)
+                    ABflag = 0
+                    TitleFlag = 0
                     #After the first line, each line in the abstract starts with extra spaces.
                     #removing them and the \n character puts the abstract together. 
                     for line in f:
-                        line = line.replace("\n      ", "")
+                        line = line.replace("\n", "")
+                        line = line.replace("      ", "")
+                        if (" - ") in line:
+                            ABflag = 0
+                            TitleFlag = 0
                         if line.startswith("PMID-"):
                                 PMID = (line.split("- ")[-1])
                                 docID= PMID #docID seems to be the same as PMID in this case
@@ -136,10 +131,19 @@ def parserPubmed(folder_name, source):
                             JT2= getElementAppearances("JT", line, journals, docID)
                         elif line.startswith("TI  -"):
                             TI =getElement("TI", line, subdata, "title")
-                            TI = getElementAppearances("TI", line, titles, docID)
+                            TI2 = getElement("TI", line, titles, PMID)
+                            TitleFlag = 1
+                        elif line != "" and TitleFlag == 1:
+                            titles[PMID] = str(titles[PMID] +line)
+                            print(titles[PMID])
+                            subdata["title"] = str(subdata["title"] + line)
                         elif line.startswith("AB  -"):
                             AB = getElement("AB", line, subdata, "abstract")
-                            AB2 = getElementAppearances("AB", line, abstracts, docID)
+                            AB2= getElement("TI", line, abstracts, PMID)
+                            ABflag = 1
+                        elif line != "" and ABflag == 1:
+                            abstracts[PMID] = str(abstracts[PMID] +line)
+                            subdata["abstract"] += line
                         elif line.startswith("PL  -"):
                             PL = getElement("PL", line, subdata, "Place of Publication")
                             PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
@@ -178,6 +182,11 @@ def parserPubmed(folder_name, source):
                         termstring= (f"{term, terms[term]} total:{len(terms[term])}")
                         json.dump([termstring], file2)
                 file2.close()
+                with open (os.path.join(folder_name, filelabel+"_terms.json"), "w", encoding="utf8") as file2_total:
+                    for term in terms:
+                        termstring= (f"{term}, {len(terms[term])}")
+                        json.dump([termstring], file2_total)
+                file2_total.close()
                 with open (os.path.join(folder_name, filelabel+"_countries.json"), "w", encoding="utf8") as file3:
                     for place in publicationPlaces:
                         c_string= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
