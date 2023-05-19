@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 import time
 import collections
+from tqdm import tqdm
+
 """
 This is a script that contains a function to create, 
 from these downloaded files, ajson file which contains
@@ -69,17 +71,6 @@ def parserPubmed(folder_name, source):
 
     #folder = os.path.dirname(folder_name)
     folder =os.path.basename(folder_name)
-    #print(folder)
-    #create a name for the json file, for now
-    #output_path = folder_name + folder + ".json"
-    #output_path = folder_name +"\\" + folder +"_pubmed_abstract_bu" ".json"
-
-    #pmidListdoc =  folder + "testList"+ ".txt"
- #{docID :{},} #defining data here means the first key value pair is 0:{}.
-    
-    #lines 71-74 is to make sure there are no missing pmids
-    
-    #for now, I'm just nesting two dictionaries together.
     for filename in os.listdir(folder_name):
         if filename.endswith(".txt"):
             filelabel = filename.split(".")[0]
@@ -93,14 +84,14 @@ def parserPubmed(folder_name, source):
             #
             try:
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
-                    print (folder)
-                    print(filename)
                     terms = collections.defaultdict(list)
                     publicationPlaces=collections.defaultdict(list)
                     journals= collections.defaultdict(list)
                     abstracts = collections.defaultdict(list)
                     titles = collections.defaultdict(list)
                     years = collections.defaultdict(list)
+                    print (folder)
+                    print(filename)
                     #After the first line, each line in the abstract starts with extra spaces.
                     #removing them and the \n character puts the abstract together. 
                     for line in f:
@@ -131,31 +122,6 @@ def parserPubmed(folder_name, source):
                                 else:
                                     years[year1].append(docID)
                         #elif line starts with the PubMed element key, then run getElement on the line
-                        elif line.startswith("JT"):
-                            JT =getElement("JT", line, subdata, "journal")
-                            JT2= getElementAppearances("JT", line, journals, docID)
-                        elif line.startswith("TI  -"):
-                            TI =getElement("TI", line, subdata, "title")
-                            TI = getElementAppearances("TI", line, titles, docID)
-                        elif line.startswith("AB  -"):
-                            AB = getElement("AB", line, subdata, "abstract")
-                            AB2 = getElementAppearances("AB", line, abstracts, docID)
-                        elif line.startswith("PL  -"):
-                            PL = getElement("PL", line, subdata, "Place of Publication")
-                            PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
-                        elif line.startswith("MH  -"):
-                            MH = getElement("MH", line, subdata, "MeSH Headings")
-                            MH2= getElementAppearances("MH", line, terms, docID)
-                            """
-                            mesh = "MH  - "
-                            MeshLine = line.split(mesh)[-1].rstrip()
-                            if MeshLine not in terms:
-                                docString = []
-                                docString.append(docID)
-                                terms[MeshLine] = docString
-                            else:
-                                terms[MeshLine].append(docID)
-                            """
                         elif line == "":
                              data[docID] = [subdata]
                     
@@ -173,31 +139,7 @@ def parserPubmed(folder_name, source):
                     print("Number of docIDs added to json", docIDcount)
                     print("Number of repeat docIDs, found:", repeatCount)
                 f.close()
-                with open (os.path.join(folder_name, filelabel+"_terms.json"), "w", encoding="utf8") as file2:
-                    for term in terms:
-                        termstring= (f"{term, terms[term]} total:{len(terms[term])}")
-                        json.dump([termstring], file2)
-                file2.close()
-                with open (os.path.join(folder_name, filelabel+"_countries.json"), "w", encoding="utf8") as file3:
-                    for place in publicationPlaces:
-                        c_string= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
-                        json.dump(c_string, file3)
-                file3.close()
-                with open (os.path.join(folder_name, filelabel+"_journals.json"), "w", encoding="utf8") as file4:
-                    for journal in journals:
-                        j_string= (f"{journal, journals[journal]} total:{len(journals[journal])}")
-                        json.dump([j_string], file4)
-                file4.close()
-                with open (os.path.join(folder_name, filelabel+"_titles.json"), "w", encoding="utf8") as file5:
-                    for title in titles:
-                        t_string= (f"{title, titles[title]} total:{len(titles[title])}")
-                        json.dump([t_string], file5)
-                file5.close()
-                with open (os.path.join(folder_name, filelabel+"_abstracts.json"), "w", encoding="utf8") as file6:
-                    for abstract in abstracts:
-                        ab_string= (f"{abstract, abstracts[abstract]} total:{len(abstracts[abstract])}")
-                        json.dump([ab_string], file6)
-                file6.close()
+               
                 with open (os.path.join(folder_name, filelabel+"_years.json"), "w", encoding="utf8") as file7:
                     for yearx in years:
                         y_string= (f"{yearx, years[yearx]} total:{len(years[yearx])}")
@@ -208,13 +150,5 @@ def parserPubmed(folder_name, source):
             except OSError as e:
                 print("Error writing to file:", e)
                 sys.exit()
-    # with open (pmidListdoc, "w", encoding ="utf8") as fp:
-    #     for item in pmidList:
-    #         fp.write("%s\n" % item)
-    #     print("done")
-    #     fp.close()
-    #     print(len(pmidList))
-    #print(len(data))
-#example run of parsePubmed. likely the folder path needs to be more specific
-#at this time, both brca1 & parser3 are in the same folder
+
 parserPubmed("medline", "medline")
