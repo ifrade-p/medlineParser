@@ -103,11 +103,10 @@ def parserPubmed(folder_name, source):
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
                     print (folder)
                     print(filename)
-                    file_content = f.read()
-                    file_content = file_content.replace("\n      ", "")
                     #After the first line, each line in the abstract starts with extra spaces.
                     #removing them and the \n character puts the abstract together. 
-                    for line in file_content.split('\n'):
+                    for line in f.split('\n'):
+                        line = line.replace("\n      ", "")
                         if line.startswith("PMID-"):
                                 PMID = (line.split("- ")[-1])
                                 docID= PMID #docID seems to be the same as PMID in this case
