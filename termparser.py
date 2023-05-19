@@ -98,6 +98,7 @@ def parserPubmed(folder_name, source):
             journals= collections.defaultdict(list)
             abstracts = collections.defaultdict(list)
             titles = collections.defaultdict(list)
+            years = collections.defaultdict(list)
             try:
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
                     print (folder)
@@ -126,6 +127,12 @@ def parserPubmed(folder_name, source):
                                 DP = line.split("DP  - ")[-1]
                                 year1 = int(DP[:4])
                                 subdata["year"] = year1
+                                if year1 not in years:
+                                    docString = []
+                                    docString.append(docID)
+                                    years[year1] = docString
+                                else:
+                                    years[year1].append(docID)
                         #elif line starts with the PubMed element key, then run getElement on the line
                         elif line.startswith("JT"):
                             JT =getElement("JT", line, subdata, "journal")
@@ -160,10 +167,10 @@ def parserPubmed(folder_name, source):
                 sys.exit()
             try:
                 os.makedirs(output_dir, exist_ok=True)
-                with open(filelabel+".json", "w", encoding ="utf8") as f:
-                    for docID in data:
-                            docIDcount+=1
-                            json.dump(data[docID], f)
+                #with open(filelabel+".json", "w", encoding ="utf8") as f:
+                for docID in data:
+                    docIDcount+=1
+                         #json.dump(data[docID], f)
                     #^this for loop is to make sure the output is formatted correctly. 
                     print("Number of PMIDs found:", PMIDcount)
                     print("Number of docIDs added to json", docIDcount)
