@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 import time
 import collections
+from tqdm.auto import tqdm
 """
 This is a script that contains a function to create, 
 from these downloaded files, ajson file which contains
@@ -79,8 +80,9 @@ def parserPubmed(folder_name, source):
             PMID = ""
             docID = 0
             data = {}
-            #
+            #filesize = os.path.getsize(os.path.join(folder_name, filename))
             try:
+                print("\n")
                 with open(os.path.join(folder_name, filename), "r", encoding="utf8") as f:
                     #print (folder)
                     print(filename)
@@ -90,76 +92,78 @@ def parserPubmed(folder_name, source):
                     abstracts = collections.defaultdict(str)
                     titles = collections.defaultdict(str)
                     years = collections.defaultdict(list)
-                   # ABflag = 0
+                # ABflag = 0
                     TitleFlag = 0
                     JournalFlag = 0
                     
                     #After the first line, each line in the abstract starts with extra spaces.
-                    #removing them and the \n character puts the abstract together. 
-                    for line in f:
-                        line = line.replace("\n", "")
-                        line = line.replace("      ", "")
-                        if (" - ") in line:
-                            #ABflag = 0
-                            TitleFlag = 0
-                            JournalFlag = 0
-                        if line.startswith("PMID-"):
-                                PMID = (line.split("- ")[-1])
-                                docID= PMID #docID seems to be the same as PMID in this case
-                                subdata = {"docid": docID, "pmid": PMID,"year": "",
-                                "journal": [], "source": source, "title": "", "abstract" : "",
-                                "MeSH Headings": [], "Place of Publication": ""}
-                                if docID in data:
-                                     repeatCount+=1
-                                else:
-                                     PMIDcount +=1
-                                     #pmidList.append(docID)
-                                #Each article gets a subdata dictionary, then its nested into data
-                        elif line.startswith("DP  -"): #DP= date published. Note that theyre are several pubmed elements
-                            # refering to different dates for the article.
-                            #-could be cleaner, and I'm worried about this line potentially failing if the date
-                            #is formatted incorrectly
-                                DP = line.split("DP  - ")[-1]
-                                year1 = int(DP[:4])
-                                subdata["year"] = year1
-                                if year1 not in years:
-                                    docString = []
-                                    docString.append(docID)
-                                    years[year1] = docString
-                                else:
-                                    years[year1].append(docID)
-                        #elif line starts with the PubMed element key, then run getElement on the line
-                        elif line.startswith("JT"):
-                            JT =getElement("JT", line, subdata, "journal")
-                            JT2= getElement("JT", line, journals, PMID)
-                        elif line != "" and JournalFlag == 1:
-                            print(line)
-                            journals[PMID] = str(journals[PMID] +line)
-                            subdata["journals"] += line
-                        elif line.startswith("TI  -"):
-                            TI =getElement("TI", line, subdata, "title")
-                            TI2 = getElement("TI", line, titles, PMID)
-                            TitleFlag = 1
-                        elif line != "" and TitleFlag == 1:
-                            titles[PMID] = str(titles[PMID] +line)
-                            subdata["title"] = str(subdata["title"] + line)
-                        elif line.startswith("PL  -"):
-                            PL = getElement("PL", line, subdata, "Place of Publication")
-                            PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
-                        elif line.startswith("MH  -"):
-                            MH = getElement("MH", line, subdata, "MeSH Headings")
-                            MH2= getElementAppearances("MH", line, terms, docID)
-                        elif line == "":
-                            data[docID] = [subdata]
-                        """
-                        elif line.startswith("AB  -"):
-                            AB = getElement("AB", line, subdata, "abstract")
-                            AB2= getElement("TI", line, abstracts, PMID)
-                            ABflag = 1
-                        elif line != "" and ABflag == 1:
-                            abstracts[PMID] = str(abstracts[PMID] +line)
-                            subdata["abstract"] += line
-                        """
+                    #removing them and the \n character puts the abstract together.
+                    filesize =sum(1 for i in open(os.path.join(folder_name, filename), 'rb'))
+                    with tqdm(total= filesize) as pbar:
+                        for line in f:
+                            line = line.replace("\n", "")
+                            line = line.replace("      ", "")
+                            if (" - ") in line:
+                                #ABflag = 0
+                                TitleFlag = 0
+                                JournalFlag = 0
+                            if line.startswith("PMID-"):
+                                    PMID = (line.split("- ")[-1])
+                                    docID= PMID #docID seems to be the same as PMID in this case
+                                    subdata = {"docid": docID, "pmid": PMID,"year": "",
+                                    "journal": [], "source": source, "title": "", "abstract" : "",
+                                    "MeSH Headings": [], "Place of Publication": ""}
+                                    if docID in data:
+                                        repeatCount+=1
+                                    else:
+                                        PMIDcount +=1
+                                        #pmidList.append(docID)
+                                    #Each article gets a subdata dictionary, then its nested into data
+                            elif line.startswith("DP  -"): #DP= date published. Note that theyre are several pubmed elements
+                                # refering to different dates for the article.
+                                #-could be cleaner, and I'm worried about this line potentially failing if the date
+                                #is formatted incorrectly
+                                    DP = line.split("DP  - ")[-1]
+                                    year1 = int(DP[:4])
+                                    subdata["year"] = year1
+                                    if year1 not in years:
+                                        docString = []
+                                        docString.append(docID)
+                                        years[year1] = docString
+                                    else:
+                                        years[year1].append(docID)
+                            #elif line starts with the PubMed element key, then run getElement on the line
+                            elif line.startswith("JT"):
+                                JT =getElement("JT", line, subdata, "journal")
+                                JT2= getElement("JT", line, journals, PMID)
+                            elif line != "" and JournalFlag == 1:
+                                print(line)
+                                journals[PMID] = str(journals[PMID] +line)
+                                subdata["journals"] += line
+                            elif line.startswith("TI  -"):
+                                TI =getElement("TI", line, subdata, "title")
+                                TI2 = getElement("TI", line, titles, PMID)
+                                TitleFlag = 1
+                            elif line != "" and TitleFlag == 1:
+                                titles[PMID] = str(titles[PMID] +line)
+                                subdata["title"] = str(subdata["title"] + line)
+                            elif line.startswith("PL  -"):
+                                PL = getElement("PL", line, subdata, "Place of Publication")
+                                PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
+                            elif line.startswith("MH  -"):
+                                MH = getElement("MH", line, subdata, "MeSH Headings")
+                                MH2= getElementAppearances("MH", line, terms, docID)
+                            elif line == "":
+                                data[docID] = [subdata]
+                            """
+                            elif line.startswith("AB  -"):
+                                AB = getElement("AB", line, subdata, "abstract")
+                                AB2= getElement("TI", line, abstracts, PMID)
+                                ABflag = 1
+                            elif line != "" and ABflag == 1:
+                                abstracts[PMID] = str(abstracts[PMID] +line)
+                                subdata["abstract"] += line
+                            """
                     data[docID] = [subdata]
             except OSError as e:
                 print("Error opening file:", e)
