@@ -99,6 +99,7 @@ def parserPubmed(folder_name, source):
                     #After the first line, each line in the abstract starts with extra spaces.
                     #removing them and the \n character puts the abstract together.
                     filesize =sum(1 for i in open(os.path.join(folder_name, filename), 'rb'))
+                    print(filesize)
                     with tqdm(total= filesize) as pbar:
                         for line in f:
                             line = line.replace("\n", "")
@@ -133,13 +134,9 @@ def parserPubmed(folder_name, source):
                                     else:
                                         years[year1].append(docID)
                             #elif line starts with the PubMed element key, then run getElement on the line
-                            elif line.startswith("JT"):
-                                JT =getElement("JT", line, subdata, "journal")
-                                JT2= getElement("JT", line, journals, PMID)
-                            elif line != "" and JournalFlag == 1:
-                                print(line)
-                                journals[PMID] = str(journals[PMID] +line)
-                                subdata["journals"] += line
+                            elif line.startswith("TA  -"):
+                                TA =getElement("TA", line, subdata, "journal")
+                                TA2= getElementAppearances("TA", line, journals, docID)
                             elif line.startswith("TI  -"):
                                 TI =getElement("TI", line, subdata, "title")
                                 TI2 = getElement("TI", line, titles, PMID)
@@ -196,7 +193,6 @@ def parserPubmed(folder_name, source):
                         termstring= (f"{term}, {len(terms[term])}")
                         json.dump([termstring], file2_total)
                 file2_total.close()
-
                 with open (os.path.join(folder_name, filelabel+"_countries.json"), "w", encoding="utf8") as file3:
                     for place in publicationPlaces:
                         c_string= (f"{place, publicationPlaces[place]} total:{len(publicationPlaces[place])}")
