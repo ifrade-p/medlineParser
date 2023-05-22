@@ -1,4 +1,3 @@
-from symbol import term
 import sys
 import os
 import json
@@ -6,7 +5,6 @@ import re
 from datetime import datetime
 import time
 import collections
-from tqdm.auto import tqdm
 """
 This is a script that contains a function to create, 
 from these downloaded files, ajson file which contains
@@ -110,47 +108,44 @@ def parserPubmed(folder_name, source):
                     termsYears = collections.defaultdict(dict)
                     #After the first line, each line in the abstract starts with extra spaces.
                     #removing them and the \n character puts the abstract together.
-                    filesize =sum(1 for i in open(os.path.join(folder_name, filename), 'rb'))
-                    print(filesize)
-                    with tqdm(total= filesize) as pbar:
-                        for line in f:
-                            line = line.replace("\n", "")
-                            line = line.replace("      ", "")
-                            if (" - ") in line:
-                                #ABflag = 0
-                                TitleFlag = 0
-                                JournalFlag = 0
-                            if line.startswith("PMID-"):
-                                    PMID = (line.split("- ")[-1])
-                                    docID= PMID #docID seems to be the same as PMID in this case
-                                    subdata = {"docid": docID, "pmid": PMID, "years": 0}
-                                    if docID in data:
-                                        repeatCount+=1
-                                    else:
-                                        PMIDcount +=1
-                                        #pmidList.append(docID)
-                                    #Each article gets a subdata dictionary, then its nested into data
-                            elif line.startswith("DP  -"): #DP= date published. Note that theyre are several pubmed elements
-                                # refering to different dates for the article.
-                                #-could be cleaner, and I'm worried about this line potentially failing if the date
-                                #is formatted incorrectly
-                                    DP = line.split("DP  - ")[-1]
-                                    year1 = int(DP[:4])
-                                    subdata["year"] = year1
-                                    if year1 not in years:
-                                        docString = []
-                                        docString.append(docID)
-                                        years[year1] = docString
-                                    else:
-                                        years[year1].append(docID)
-                            #elif line starts with the PubMed element key, then run getElement on the line
-                            elif line.startswith("PL  -"):
-                                PL2=  getElementAppearances("PL", line, publicationPlaces, PMID)
-                            elif line.startswith("MH  -"):
-                                MH2= getElementAppearances("MH", line, terms, PMID)
-                                MH3 = getElementYears("MH", line, termsYears, year1)
-                            elif line == "":
-                                data[docID] = [subdata]
+                    for line in f:
+                        line = line.replace("\n", "")
+                        line = line.replace("      ", "")
+                        if (" - ") in line:
+                            #ABflag = 0
+                            TitleFlag = 0
+                            JournalFlag = 0
+                        if line.startswith("PMID-"):
+                                PMID = (line.split("- ")[-1])
+                                docID= PMID #docID seems to be the same as PMID in this case
+                                subdata = {"docid": docID, "pmid": PMID, "years": 0}
+                                if docID in data:
+                                    repeatCount+=1
+                                else:
+                                    PMIDcount +=1
+                                    #pmidList.append(docID)
+                                #Each article gets a subdata dictionary, then its nested into data
+                        elif line.startswith("DP  -"): #DP= date published. Note that theyre are several pubmed elements
+                            # refering to different dates for the article.
+                            #-could be cleaner, and I'm worried about this line potentially failing if the date
+                            #is formatted incorrectly
+                                DP = line.split("DP  - ")[-1]
+                                year1 = int(DP[:4])
+                                subdata["year"] = year1
+                                if year1 not in years:
+                                    docString = []
+                                    docString.append(docID)
+                                    years[year1] = docString
+                                else:
+                                    years[year1].append(docID)
+                        #elif line starts with the PubMed element key, then run getElement on the line
+                        elif line.startswith("PL  -"):
+                            PL2=  getElementAppearances("PL", line, publicationPlaces, PMID)
+                        elif line.startswith("MH  -"):
+                            MH2= getElementAppearances("MH", line, terms, PMID)
+                            MH3 = getElementYears("MH", line, termsYears, year1)
+                        elif line == "":
+                            data[docID] = [subdata]
                     data[docID] = [subdata]
             except OSError as e:
                 print("Error opening file:", e)
@@ -183,10 +178,10 @@ def parserPubmed(folder_name, source):
                         termstring= (f"{term}, {len(terms[term])}")
                         json.dump([termstring], file2_total)
                 file2_total.close()
-                with open (os.path.join(folder_name, filelabel+"_term_years.csv"), "w", encoding="utf8") as f2_years:
+                with open (os.path.join(folder_name, filelabel+"_term_years.json"), "w", encoding="utf8") as f2_years:
                     for term in termsYears:
-                        termstring= (f"{term}, {(termsYears[term])}")
-                        print(termstring)
+                        termstring= (term, (termsYears[term]))
+                        #print(termstring)
                         json.dump([termstring], f2_years)
                 f2_years.close()
                 with open (os.path.join(folder_name, filelabel+"_countries.json"), "w", encoding="utf8") as file3:
@@ -201,13 +196,13 @@ def parserPubmed(folder_name, source):
                 file3_total.close()
                 with open (os.path.join(folder_name, filelabel+"_years.json"), "w", encoding="utf8") as file7:
                     for yearx in years:
-                        y_string= (f"{yearx, years[yearx]} total:{len(years[yearx])}")
-                        json.dump([y_string], file7)
+                        y_string= (int(yearx), years[yearx],"total:",len(years[yearx]))
+                        json.dump(y_string, file7)
                 file7.close()
-                with open (os.path.join(folder_name+"\\totals", filelabel+"totals_years.json"), "w", encoding="utf8") as file7_totals:
+                with open (os.path.join(folder_name+"\\totals", filelabel+"_totals_years.json"), "w", encoding="utf8") as file7_totals:
                     for yearx in years:
-                        y_string= (f"{yearx} total:{len(years[yearx])}")
-                        json.dump([y_string], file7_totals)
+                        y_string= (yearx, len(years[yearx]))
+                        json.dump(y_string, file7_totals)
                 file7_totals.close()
                 t1 = time.clock()
                 print("Time elapsed: ", t1 - t0)
