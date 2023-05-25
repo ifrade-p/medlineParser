@@ -99,8 +99,10 @@ def parserPubmed(folder_name, source):
                         line = line.replace("\n", "")
                         line = line.replace("      ", "")
                         if (" - ") in line:
+                            """
                             ABflag = 0
                             TitleFlag = 0
+                            """
                             JournalFlag = 0
                         if line.startswith("PMID-"):
                                 PMID = (line.split("- ")[-1])
@@ -127,10 +129,20 @@ def parserPubmed(folder_name, source):
                                     years[year1] = docString
                                 else:
                                     years[year1].append(docID)
+                        
                         #elif line starts with the PubMed element key, then run getElement on the line
                         elif line.startswith("TA  -"):
                             TA =getElement("TA", line, subdata, "journal")
                             TA2= getElementAppearances("TA", line, journals, docID)
+                        elif line.startswith("PL  -"):
+                            PL = getElement("PL", line, subdata, "Place of Publication")
+                            PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
+                        elif line.startswith("MH  -"):
+                            MH = getElement("MH", line, subdata, "MeSH Headings")
+                            MH2= getElementAppearances("MH", line, terms, docID)
+                        elif line == "":
+                            data[docID] = [subdata]
+                        """
                         elif line.startswith("TI  -"):
                             TI =getElement("TI", line, subdata, "title")
                             TI2 = getElement("TI", line, titles, PMID)
@@ -145,14 +157,7 @@ def parserPubmed(folder_name, source):
                         elif line != "" and ABflag == 1:
                             abstracts[PMID] = str(abstracts[PMID] +line)
                             subdata["abstract"] += line
-                        elif line.startswith("PL  -"):
-                            PL = getElement("PL", line, subdata, "Place of Publication")
-                            PL2=  getElementAppearances("PL", line, publicationPlaces, docID)
-                        elif line.startswith("MH  -"):
-                            MH = getElement("MH", line, subdata, "MeSH Headings")
-                            MH2= getElementAppearances("MH", line, terms, docID)
-                        elif line == "":
-                            data[docID] = [subdata]
+                        """
                     data[docID] = [subdata]
             except OSError as e:
                 print("Error opening file:", e)
@@ -206,6 +211,7 @@ def parserPubmed(folder_name, source):
                         journalstring= (f"{journal}, {len(journals[journal])}")
                         json.dump([journalstring], file4_total)
                 file4_total.close()
+                """
                 with open (os.path.join(folder_name, filelabel+"_titles.json"), "w", encoding="utf8") as file5:
                     for title in titles:
                         t_string= (f"{title, titles[title]}")
@@ -216,6 +222,7 @@ def parserPubmed(folder_name, source):
                         ab_string= (f"{abstract, abstracts[abstract]} total:{len(abstracts[abstract])}")
                         json.dump([ab_string], file6)
                 file6.close()
+                """
                 with open (os.path.join(folder_name, filelabel+"_years.json"), "w", encoding="utf8") as file7:
                     for yearx in years:
                         y_string= (f"{yearx, years[yearx]} total:{len(years[yearx])}")
